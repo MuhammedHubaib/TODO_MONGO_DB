@@ -29,34 +29,36 @@ def create_token(data: dict):
     return encoded_jwt
 
 
-def verify_token(token: str, credentails_expectation):
+def verify_token(token: str, credentails_exception):
     
     try:
         payload= jwt.decode(token,SECRET_KEY,algorithms=ALGORITHM)
         id:str = payload.get('user_id')
         
         if id is None:
-            raise credentails_expectation
+            raise credentails_exception
         token_data= schema.token(id=id)
         
     except JWTError:
-        raise credentails_expectation
+        raise credentails_exception
     
     return token_data
 
 async def get_current_user(token: str= Depends(oauth2_schema)):
     
     await main()
-    credentails_expectation = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=f"Couldn't validate the Credentials",
+    credentails_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=f"Couldn't validate the Credentials",
                                           headers={'WWW-Authenticate':'Bearer'})
     
-    token = verify_token(token,credentails_expectation)
+    token = verify_token(token,credentails_exception)
     #user =  await model.User.find_one({"_id":token.id})
     user = model.User.find_one({"_id": ObjectId(token.id)})
 
     if not user:
-        raise credentails_expectation
+        raise credentails_exception
     
     user_dict = dict(await user)
 
     return user_dict
+
+     
