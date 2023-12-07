@@ -11,9 +11,16 @@ router = APIRouter(prefix="/task",tags=['Task'])
 @router.post("/", response_model=schema.task)
 async def add_task(task: schema.taskIn, current_user = Depends(oauth.get_current_user)):
     await main()
-    created_task = await model.Task(user_id = str(current_user["id"]),**task.dict()).create()
-    return json.loads(json.dumps(jsonable_encoder(created_task)))
-
+    
+    new_task = model.Task(owner_id= current_user ,**task.dict())
+    
+    for ower_id in new_task.user_id:
+        new_task.authorized_id.append(ower_id)
+        
+    new_task.authorized_id.append(current_user)
+        
+    await new_task.create()
+    return jsonable_encoder(new_task)
 
 
 @router.get("/",response_model= list[schema.task])
@@ -23,7 +30,7 @@ async def get_all():
     tasks_cursor = await model.Task.find_all().to_list()
     
     if tasks_cursor:
-        return json.loads(json.dumps(jsonable_encoder(tasks_cursor)))
+        return jsonable_encoder(tasks_cursor)
     
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -44,18 +51,17 @@ async def get_task_by_id(id: str,current_user: str = Depends(oauth.get_current_u
         raise HTTPException(status_code=(status.HTTP_404_NOT_FOUND),
                             detail=f"There's no Task found in this {id} ID")
         
-    if str(task.user_id) != str(current_user["id"]):
+   # for id in task.authorized_id:
+        
+    if str(task.authorized_id) != str(current_user["id"]):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You are not authorized to perform this action")
     
     return jsonable_encoder(task)
 
         
 
-
-
-
 @router.put("/{id}", response_model=schema.task)
-async def UpdateTask(id: str, updated_task: schema.taskIn,current_user: str = Depends(oauth.get_current_user)):
+async def UpdateTask(id: str, updated_task: schema.task_update,current_user: str = Depends(oauth.get_current_user)):
     
     if not ObjectId.is_valid(id):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -71,9 +77,10 @@ async def UpdateTask(id: str, updated_task: schema.taskIn,current_user: str = De
     # Create an instance of the model and update its fields
     existing_task_data = jsonable_encoder(existing_task.dict())
     updated_task_data = {**existing_task_data, **updated_task.dict()}
+
     
-     
-    if str(existing_task.user_id) != str(current_user["id"]):
+    #for auth_id in existing_task.authorized_id:
+    if current_user not in existing_task.authorized_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You are not authorized to perform this action")
                 
     # Update the task in the database
@@ -98,7 +105,7 @@ async def DeleteTask(id: str, current_user: str = Depends(oauth.get_current_user
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     
-    if str(task.user_id) != str(current_user["id"]):
+    if str(task.owner_id) != str(current_user["id"]):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="You are not authorized to perform this action")
     
     

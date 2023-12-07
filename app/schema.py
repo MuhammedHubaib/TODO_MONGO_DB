@@ -9,7 +9,8 @@ class task(BaseModel):
     description: str
     date_and_time: str
     completed: bool
-    user_id: str
+    authorized_id: list
+    owner_id:str
 
 class taskIn(BaseModel):
     
@@ -17,6 +18,14 @@ class taskIn(BaseModel):
     description: str
     date_and_time: str
     completed: bool
+    user_id: list
+    
+class task_update(BaseModel):
+    
+    task: str
+    description: str
+    date_and_time: str
+    completed: bool    
 
 class userIn(BaseModel):
     

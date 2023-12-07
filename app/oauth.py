@@ -58,7 +58,8 @@ async def get_current_user(token: str= Depends(oauth2_schema)):
         raise credentails_exception
     
     user_dict = dict(await user)
+    ower_id = str(user_dict["id"])
+    #auth_users = []
+    #auth_users.append(str(ower_id))
 
-    return user_dict
-
-     
+    return ower_id

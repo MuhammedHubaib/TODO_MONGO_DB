@@ -12,4 +12,6 @@ class Task(Document):
     description: str
     date_and_time: str
     completed: bool
-    user_id: str 
+    user_id: list[str]=[]
+    owner_id: str
+    authorized_id: list[str]=[]
